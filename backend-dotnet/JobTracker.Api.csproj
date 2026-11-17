@@ -1,0 +1,18 @@
+<!-- Project file = CMakeLists.txt for C#. PackageReference = a dependency (like vcpkg/conan). -->
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>JobTracker.Api</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- EF Core = ORM: maps C# classes to database tables, so you write C# instead of raw SQL. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
+    <!-- Validates the "Authorization: Bearer <token>" header on every protected request. -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
+  </ItemGroup>
+
+</Project>

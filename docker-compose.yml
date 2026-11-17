@@ -1,0 +1,24 @@
+# Run ONE backend in Docker (both use port 5000):
+#   docker compose --profile dotnet up --build
+#   docker compose --profile node up --build
+# The Angular app still runs with `npm start` in frontend-angular/.
+services:
+  api-dotnet:
+    profiles: ["dotnet"]
+    build: ./backend-dotnet
+    ports: ["5000:5000"]
+    environment:
+      Jwt__Key: ${JWT_SECRET:-dev-only-secret-change-me-it-must-be-at-least-32-bytes-long}
+    volumes: ["dotnet-data:/data"]
+
+  api-node:
+    profiles: ["node"]
+    build: ./backend-node
+    ports: ["5000:5000"]
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me-it-must-be-at-least-32-bytes-long}
+    volumes: ["node-data:/data"]
+
+volumes:
+  dotnet-data:
+  node-data:

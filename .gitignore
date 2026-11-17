@@ -1,0 +1,21 @@
+# Node / Angular
+node_modules/
+dist/
+.angular/
+out-tsc/
+
+# .NET
+bin/
+obj/
+
+# Local databases
+*.db
+*.db-shm
+*.db-wal
+
+# Editors / OS / secrets
+.vscode/
+.idea/
+.DS_Store
+*.log
+.env
