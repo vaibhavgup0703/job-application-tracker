@@ -19,3 +19,6 @@ obj/
 .DS_Store
 *.log
 .env
+
+# Files Claude saved into this folder (not part of the project)
+Claude outputs/

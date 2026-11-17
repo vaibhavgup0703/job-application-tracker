@@ -28,7 +28,14 @@ import { readApiError } from '../../core/api-error';
         <button class="btn btn-primary" type="submit" [disabled]="form.invalid || loading()">
           {{ loading() ? 'Logging in…' : 'Log in' }}
         </button>
+        <button class="btn btn-ghost" type="button" [disabled]="loading()" (click)="tryDemo()">
+          Try the demo account
+        </button>
       </form>
+
+      @if (waking()) {
+        <p class="muted">Waking up the server. The free host sleeps when idle, so the first request can take up to a minute.</p>
+      }
 
       <p class="muted">No account? <a routerLink="/register">Create one</a></p>
     </section>
@@ -41,6 +48,7 @@ export class LoginComponent {
 
   loading = signal(false);
   error = signal('');
+  waking = signal(false); // true when the request is slow (the free backend is waking from sleep)
 
   // nonNullable: reset() goes back to '' instead of null, so values stay typed as string.
   form = this.fb.nonNullable.group({
@@ -48,15 +56,33 @@ export class LoginComponent {
     password: ['', Validators.required],
   });
 
+  // Fill in the demo credentials (seeded by the backend's DemoSeeder) and log in.
+  tryDemo(): void {
+    this.form.setValue({ email: 'demo@jobtracker.dev', password: 'Demo@12345' });
+    this.submit();
+  }
+
   submit(): void {
     if (this.form.invalid) return;
     this.loading.set(true);
     this.error.set('');
 
+    // If no answer within 4 s, explain the delay instead of looking broken.
+    // setTimeout = run once after a delay (like a one-shot timer); clearTimeout cancels it.
+    const slowTimer = setTimeout(() => this.waking.set(true), 4000);
+    const done = () => {
+      clearTimeout(slowTimer);
+      this.waking.set(false);
+    };
+
     const { email, password } = this.form.getRawValue(); // destructuring, like C++17 structured bindings
     this.auth.login(email, password).subscribe({
-      next: () => this.router.navigateByUrl('/dashboard'),
+      next: () => {
+        done();
+        this.router.navigateByUrl('/dashboard');
+      },
       error: (err) => {
+        done();
         this.error.set(readApiError(err).message);
         this.loading.set(false);
       },

@@ -46,9 +46,18 @@ builder.Services
 // Authorization: "is this caller ALLOWED?" Here: any logged-in user (via [Authorize]).
 builder.Services.AddAuthorization();
 
-// CORS: let the Angular dev server (another origin) call this API from the browser.
+// CORS: which websites (origins) may call this API from a browser.
+// Locally that's the Angular dev server; in production it's the Vercel URL, set through the
+// environment variable Cors__AllowedOrigin (comma-separate several). A bare host like
+// "myapp.vercel.app" gets "https://" added, and a trailing "/" is removed (browsers send origins without it).
+var allowedOrigins = (config["Cors:AllowedOrigin"] ?? "")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    .Select(o => (o.StartsWith("http://") || o.StartsWith("https://") ? o : "https://" + o).TrimEnd('/'))
+    .Append("http://localhost:4200")
+    .Distinct()
+    .ToArray();
 builder.Services.AddCors(o => o.AddPolicy("Frontend", p =>
-    p.WithOrigins(config["Cors:AllowedOrigin"] ?? "http://localhost:4200")
+    p.WithOrigins(allowedOrigins)
      .AllowAnyHeader()
      .AllowAnyMethod()));
 
@@ -58,7 +67,12 @@ var app = builder.Build();
 // `using var` = the scope object is disposed at the end of the block, exactly like C++ RAII.
 using (var scope = app.Services.CreateScope())
 {
-    scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.EnsureCreated();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.EnsureCreated();
+
+    // Hosted demo only: refill the demo account after Render wipes the disk (see Data/DemoSeeder.cs).
+    if (config.GetValue<bool>("Demo:Enabled"))
+        DemoSeeder.Seed(db, scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>());
 }
 
 // ================= 2. MIDDLEWARE PIPELINE (ORDER MATTERS) =================
@@ -71,5 +85,13 @@ app.MapControllers();                           // finally: route to the control
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));   // for Docker / uptime checks
 
-// Port 5000 unless the ASPNETCORE_URLS environment variable says otherwise (Docker uses that).
-app.Run(Environment.GetEnvironmentVariable("ASPNETCORE_URLS") is null ? "http://localhost:5000" : null);
+// Where to listen:
+//   - Render (and most cloud hosts) tell the app its port through the PORT environment variable.
+//     0.0.0.0 = accept connections from outside the container, not just from inside it.
+//   - Docker Compose sets ASPNETCORE_URLS instead; passing null means "use that".
+//   - Otherwise (your laptop): http://localhost:5000.
+var port = Environment.GetEnvironmentVariable("PORT");
+string? url = port is not null ? $"http://0.0.0.0:{port}"
+            : Environment.GetEnvironmentVariable("ASPNETCORE_URLS") is not null ? null
+            : "http://localhost:5000";
+app.Run(url);

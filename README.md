@@ -10,6 +10,13 @@ Track every job you apply to: company, role, status, salary, dates and notes, wi
 | `backend-dotnet/` | ASP.NET Core Web API (.NET 10), EF Core + SQLite, JWT auth, PBKDF2 password hashing |
 | `backend-node/` | Node.js + Express, SQLite (`node:sqlite`), JWT auth, scrypt password hashing |
 
+## Live demo
+
+- **App:** _add your Vercel URL here after deploying_
+- **Demo login:** `demo@jobtracker.dev` / `Demo@12345`, or click **Try the demo account** on the login page
+
+The API runs on Render's free tier. It sleeps after 15 minutes idle, so the first request can take up to a minute. Its SQLite data resets on restart, and the demo account is re-seeded automatically.
+
 A shared **contract test** (`scripts/contract-test.mjs`, 32 checks) passes against either backend.
 
 ## Features
@@ -121,6 +128,20 @@ npm test
 ```bash
 docker compose --profile dotnet up --build
 ```
+
+## Deployment
+
+```mermaid
+flowchart LR
+    U[Browser] --> V[Vercel CDN<br/>Angular static files]
+    U -- "API calls + JWT" --> R[Render free web service<br/>.NET API in Docker]
+    R --> S[(SQLite in /data<br/>reset on restart)]
+```
+
+| Piece | Host | Config |
+|---|---|---|
+| .NET API | Render (Docker, free) | `render.yaml`: env vars `Jwt__Key` (generated), `Demo__Enabled=true`, `Cors__AllowedOrigin` = the Vercel URL |
+| Angular | Vercel (static) | `frontend-angular/vercel.json`: Root Directory `frontend-angular`, env var `API_URL` = the Render URL |
 
 ## Project layout
 

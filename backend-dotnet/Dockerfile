@@ -10,6 +10,8 @@ RUN dotnet publish -c Release -o /app
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY --from=build /app .
+# SQLite needs its folder to exist before it can create the database file.
+RUN mkdir -p /data
 ENV ASPNETCORE_URLS=http://0.0.0.0:5000
 ENV ConnectionStrings__Default="Data Source=/data/jobtracker.db"
 EXPOSE 5000

@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm install",
+  "buildCommand": "node scripts/set-env.mjs && npm run build",
+  "outputDirectory": "dist/jobtracker-ui/browser",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}
